@@ -1,6 +1,16 @@
 import { BigDecimal, Address, BigInt, ethereum, Bytes } from "@graphprotocol/graph-ts";
-import { Balancer, BalancerSnapshot, Pool, PoolShare, User } from "../../generated/schema";
-import { ZERO_BD } from "./constants";
+import {
+  Balancer,
+  BalancerSnapshot,
+  Pool,
+  PoolShare,
+  PoolToken,
+  Token,
+  User
+} from "../../generated/schema";
+import { WeightedPool } from "../../generated/templates/WeightedPool/WeightedPool";
+import { ERC20 } from "../../generated/WeightedPoolNoAMFactory/ERC20";
+import { ONE_BD, ZERO, ZERO_BD } from "./constants";
 import { getPoolAddress } from "./pool";
 
 export function scaleDown(num: BigInt, decimals: i32): BigDecimal {
@@ -9,6 +19,10 @@ export function scaleDown(num: BigInt, decimals: i32): BigDecimal {
       .pow(u8(decimals))
       .toBigDecimal()
   );
+}
+
+export function stringToBytes(str: string): Bytes {
+  return Bytes.fromByteArray(Bytes.fromHexString(str));
 }
 
 export function tokenToDecimal(amount: BigInt, decimals: i32): BigDecimal {
@@ -90,4 +104,124 @@ export function getBalancerSnapshot(vaultId: string, timestamp: i32): BalancerSn
   }
 
   return snapshot;
+}
+
+export function createToken(tokenAddress: Address): Token {
+  let erc20token = ERC20.bind(tokenAddress);
+  let token = new Token(tokenAddress.toHexString());
+  let name = "";
+  let symbol = "";
+  let decimals = 0;
+
+  // attempt to retrieve erc20 values
+  let maybeName = erc20token.try_name();
+  let maybeSymbol = erc20token.try_symbol();
+  let maybeDecimals = erc20token.try_decimals();
+
+  if (!maybeName.reverted) name = maybeName.value;
+  if (!maybeSymbol.reverted) symbol = maybeSymbol.value;
+  if (!maybeDecimals.reverted) decimals = maybeDecimals.value;
+
+  let pool = WeightedPool.bind(tokenAddress);
+  let isPoolCall = pool.try_getPoolId();
+  if (!isPoolCall.reverted) {
+    let poolId = isPoolCall.value;
+    token.pool = poolId.toHexString();
+  }
+
+  token.name = name;
+  token.symbol = symbol;
+  token.decimals = decimals;
+  token.totalBalanceUSD = ZERO_BD;
+  token.totalBalanceNotional = ZERO_BD;
+  token.totalSwapCount = ZERO;
+  token.totalVolumeUSD = ZERO_BD;
+  token.totalVolumeNotional = ZERO_BD;
+  token.address = tokenAddress.toHexString();
+  token.save();
+  return token;
+}
+
+// this will create the token entity and populate
+// with erc20 values
+export function getToken(tokenAddress: Address): Token {
+  let token = Token.load(tokenAddress.toHexString());
+  if (token == null) {
+    token = createToken(tokenAddress);
+  }
+  return token;
+}
+
+export function getPoolTokenId(poolId: string, tokenAddress: Address): string {
+  return poolId.concat("-").concat(tokenAddress.toHexString());
+}
+
+export function loadPoolToken(poolId: string, tokenAddress: Address): PoolToken | null {
+  return PoolToken.load(getPoolTokenId(poolId, tokenAddress));
+}
+
+export function createPoolTokenEntity(
+  pool: Pool,
+  tokenAddress: Address,
+  assetManagerAddress: Address
+): void {
+  let poolTokenId = getPoolTokenId(pool.id, tokenAddress);
+
+  let token = ERC20.bind(tokenAddress);
+  let symbol = "";
+  let name = "";
+  let decimals = 18;
+
+  let symbolCall = token.try_symbol();
+  let nameCall = token.try_name();
+  let decimalCall = token.try_decimals();
+
+  if (symbolCall.reverted) {
+    // TODO
+    //const symbolBytesCall = tokenBytes.try_symbol();
+    //if (!symbolBytesCall.reverted) {
+    //symbol = symbolBytesCall.value.toString();
+  } else {
+    symbol = symbolCall.value;
+  }
+
+  if (nameCall.reverted) {
+    //const nameBytesCall = tokenBytes.try_name();
+    //if (!nameBytesCall.reverted) {
+    //name = nameBytesCall.value.toString();
+    //}
+  } else {
+    name = nameCall.value;
+  }
+
+  if (!decimalCall.reverted) {
+    decimals = decimalCall.value;
+  }
+
+  let poolToken = new PoolToken(poolTokenId);
+  // ensures token entity is created
+  let _token = getToken(tokenAddress);
+  poolToken.poolId = pool.id;
+  poolToken.address = tokenAddress.toHexString();
+  poolToken.assetManager = assetManagerAddress;
+  poolToken.name = name;
+  poolToken.symbol = symbol;
+  poolToken.decimals = decimals;
+  poolToken.balance = ZERO_BD;
+  poolToken.cashBalance = ZERO_BD;
+  poolToken.managedBalance = ZERO_BD;
+  poolToken.priceRate = ONE_BD;
+  poolToken.token = _token.id;
+
+  // if (isComposablePool(pool)) {
+  //   let poolAddress = bytesToAddress(pool.address);
+  //   let poolContract = ComposableStablePool.bind(poolAddress);
+  //   let isTokenExemptCall = poolContract.try_isTokenExemptFromYieldProtocolFee(tokenAddress);
+
+  //   if (!isTokenExemptCall.reverted) {
+  //     poolToken.isExemptFromYieldProtocolFee = isTokenExemptCall.value;
+  //   }
+  // }
+
+  poolToken.save();
 }

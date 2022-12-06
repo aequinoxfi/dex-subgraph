@@ -162,6 +162,15 @@ export class Pool extends Entity {
     }
   }
 
+  get poolTypeVersion(): i32 {
+    let value = this.get("poolTypeVersion");
+    return value!.toI32();
+  }
+
+  set poolTypeVersion(value: i32) {
+    this.set("poolTypeVersion", Value.fromI32(value));
+  }
+
   get factory(): Bytes | null {
     let value = this.get("factory");
     if (!value || value.kind == ValueKind.NULL) {
@@ -637,6 +646,60 @@ export class Pool extends Entity {
       this.unset("upperTarget");
     } else {
       this.set("upperTarget", Value.fromBigDecimal(<BigDecimal>value));
+    }
+  }
+
+  get protocolSwapFeeCache(): BigDecimal | null {
+    let value = this.get("protocolSwapFeeCache");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigDecimal();
+    }
+  }
+
+  set protocolSwapFeeCache(value: BigDecimal | null) {
+    if (!value) {
+      this.unset("protocolSwapFeeCache");
+    } else {
+      this.set("protocolSwapFeeCache", Value.fromBigDecimal(<BigDecimal>value));
+    }
+  }
+
+  get protocolYieldFeeCache(): BigDecimal | null {
+    let value = this.get("protocolYieldFeeCache");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigDecimal();
+    }
+  }
+
+  set protocolYieldFeeCache(value: BigDecimal | null) {
+    if (!value) {
+      this.unset("protocolYieldFeeCache");
+    } else {
+      this.set(
+        "protocolYieldFeeCache",
+        Value.fromBigDecimal(<BigDecimal>value)
+      );
+    }
+  }
+
+  get protocolAumFeeCache(): BigDecimal | null {
+    let value = this.get("protocolAumFeeCache");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigDecimal();
+    }
+  }
+
+  set protocolAumFeeCache(value: BigDecimal | null) {
+    if (!value) {
+      this.unset("protocolAumFeeCache");
+    } else {
+      this.set("protocolAumFeeCache", Value.fromBigDecimal(<BigDecimal>value));
     }
   }
 }

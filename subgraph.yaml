@@ -2,7 +2,50 @@ specVersion: 0.0.5
 schema:
   file: ./schema.graphql
 dataSources:
-  - kind: ethereum
+  - kind: ethereum/contract
+    name: Vault
+    network: bsc
+    source:
+      address: "0xEE1c8DbfBf958484c6a4571F5FB7b99B74A54AA7"
+      abi: Vault
+      startBlock: 20457276
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/vault.ts
+      entities:
+        - Balancer
+        - Pool
+        - PoolToken
+        - User
+        - UserInternalBalance
+        - Token
+        - TokenSnapshot
+        - TradePair
+        - TradePairSnapshot
+        - BalancerSnapshot
+      abis:
+        - name: Vault
+          file: ./abis/Vault.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: WeightedPool
+          file: ./abis/WeightedPool.json
+        - name: StablePool
+          file: ./abis/StablePool.json
+        - name: WeightedPoolFactory
+          file: ./abis/WeightedPoolFactory.json
+      eventHandlers:
+        - event: Swap(indexed bytes32,indexed address,indexed address,uint256,uint256)
+          handler: handleSwapEvent
+        - event: PoolBalanceChanged(indexed bytes32,indexed address,address[],int256[],uint256[])
+          handler: handleBalanceChange
+        - event: PoolBalanceManaged(indexed bytes32,indexed address,indexed address,int256,int256)
+          handler: handleBalanceManage
+        - event: InternalBalanceChanged(indexed address,indexed address,int256)
+          handler: handleInternalBalanceChange
+  - kind: ethereum/contract
     name: WeightedPoolNoAMFactory
     network: bsc
     source:
@@ -18,12 +61,37 @@ dataSources:
       abis:
         - name: WeightedPoolNoAMFactory
           file: ./abis/WeightedPoolNoAMFactory.json
-        - name: ERC20
-          file: ./abis/ERC20.json
       eventHandlers:
         - event: PoolCreated(indexed address)
           handler: handlePoolCreated
       file: ./src/mappings/pool-factory.ts
+  - kind: ethereum/contract
+    name: WeightedPoolFactory
+    network: bsc
+    source:
+      address: "0x8E9aa87E45e92bad84D5F8DD1bff34Fb92637dE9"
+      abi: WeightedPoolFactory
+      startBlock: 12272146
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/pool-factory.ts
+      entities:
+        - Balancer
+        - Pool
+      abis:
+        - name: Vault
+          file: ./abis/Vault.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: WeightedPoolFactory
+          file: ./abis/WeightedPoolFactory.json
+        - name: WeightedPool
+          file: ./abis/WeightedPool.json
+      eventHandlers:
+        - event: PoolCreated(indexed address)
+          handler: handleNewWeightedPool
 templates:
   - kind: ethereum/contract
     name: WeightedPool

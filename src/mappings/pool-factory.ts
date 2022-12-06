@@ -5,13 +5,68 @@ import {
 import { ERC20 } from "../../generated/WeightedPoolNoAMFactory/ERC20";
 import { Balancer, Pool } from "../../generated/schema";
 import { Bytes, BigInt, Address } from "@graphprotocol/graph-ts";
-import { createDefaultPoolEntity, getBalancerSnapshot, scaleDown } from "../utils/misc";
+import {
+  createDefaultPoolEntity,
+  createPoolTokenEntity,
+  getBalancerSnapshot,
+  scaleDown,
+  stringToBytes
+} from "../utils/misc";
 import { ZERO, ZERO_BD } from "../utils/constants";
+import { WeightedPool as WeightedPoolTemplate } from "../../generated/templates";
+import { getPoolTokenManager, getPoolTokens, PoolType } from "../utils/pool";
+import { updatePoolWeights } from "../utils/weighted";
+import { WeightedPool } from "../../generated/templates/WeightedPool/WeightedPool";
+
+function createWeightedLikePool(
+  event: PoolCreated,
+  poolType: string,
+  poolTypeVersion: i32 = 1
+): string | null {
+  let poolAddress: Address = event.params.pool;
+  let poolContract = WeightedPool.bind(poolAddress);
+
+  let poolIdCall = poolContract.try_getPoolId();
+  let poolId = poolIdCall.value;
+
+  let swapFeeCall = poolContract.try_getSwapFeePercentage();
+  let swapFee = swapFeeCall.value;
+
+  let ownerCall = poolContract.try_getOwner();
+  let owner = ownerCall.value;
+
+  let pool = handleNewPool(event, poolId, swapFee);
+  pool.poolType = poolType;
+  pool.poolTypeVersion = poolTypeVersion;
+  pool.owner = owner;
+
+  let tokens = getPoolTokens(poolId);
+  if (tokens == null) return null;
+  pool.tokensList = tokens;
+
+  pool.save();
+
+  handleNewPoolTokens(pool, tokens);
+
+  // Load pool with initial weights
+  updatePoolWeights(poolId.toHexString());
+
+  // Create PriceRateProvider entities for WeightedPoolV2
+  // if (poolTypeVersion == 2) setPriceRateProviders(poolId.toHex(), poolAddress, tokens);
+
+  return poolId.toHexString();
+}
 
 export function handlePoolCreated(event: PoolCreatedEvent): void {
   let pool = new Pool(event.params.pool.toHexString());
 
   pool.save();
+}
+
+export function handleNewWeightedPool(event: PoolCreated): void {
+  const pool = createWeightedLikePool(event, PoolType.Weighted);
+  if (pool == null) return;
+  WeightedPoolTemplate.create(event.params.pool);
 }
 
 function findOrInitializeVault(): Balancer {
@@ -66,4 +121,17 @@ function handleNewPool(event: PoolCreated, poolId: Bytes, swapFee: BigInt) {
   }
 
   return pool;
+}
+
+function handleNewPoolTokens(pool: Pool, tokens: Bytes[]): void {
+  let tokensAddresses = changetype<Address[]>(tokens);
+
+  for (let i: i32 = 0; i < tokens.length; i++) {
+    let poolId = stringToBytes(pool.id);
+    let assetManager = getPoolTokenManager(poolId, tokens[i]);
+
+    if (!assetManager) continue;
+
+    createPoolTokenEntity(pool, tokensAddresses[i], assetManager);
+  }
 }
