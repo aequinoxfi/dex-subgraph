@@ -1,4 +1,5 @@
 import { Address, Bytes, log } from "@graphprotocol/graph-ts";
+import { Pool } from "../../generated/schema";
 import { Vault } from "../../generated/Vault/Vault";
 import { VAULT_ADDRESS } from "./constants";
 
@@ -19,6 +20,16 @@ export namespace PoolType {
   export const Gyro3 = "Gyro3";
   export const GyroCEMM = "GyroCEMM";
   export const FX = "FX";
+}
+
+export function hasVirtualSupply(pool: Pool): boolean {
+  return (
+    pool.poolType == PoolType.Linear ||
+    pool.poolType == PoolType.AaveLinear ||
+    pool.poolType == PoolType.ERC4626Linear ||
+    pool.poolType == PoolType.StablePhantom ||
+    pool.poolType == PoolType.ComposableStable
+  );
 }
 
 export function getPoolAddress(poolId: string): Address {

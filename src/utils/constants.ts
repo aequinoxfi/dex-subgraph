@@ -1,10 +1,14 @@
 import { BigDecimal, BigInt, Address, dataSource } from "@graphprotocol/graph-ts";
+import { assets } from "./assets";
 
 export let ZERO_ADDRESS = Address.fromString("0x0000000000000000000000000000000000000000");
 
 export let ZERO = BigInt.fromI32(0);
 export let ZERO_BD = BigDecimal.fromString("0");
 export let ONE_BD = BigDecimal.fromString("1");
+
+export let USD_STABLE_ASSETS = assets.stableAssets;
+export let PRICING_ASSETS = assets.stableAssets.concat(assets.pricingAssets);
 
 class AddressByNetwork {
   public mainnet: string;

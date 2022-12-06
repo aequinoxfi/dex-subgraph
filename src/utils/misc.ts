@@ -4,8 +4,10 @@ import {
   BalancerSnapshot,
   Pool,
   PoolShare,
+  PoolSnapshot,
   PoolToken,
   Token,
+  TokenSnapshot,
   User
 } from "../../generated/schema";
 import { WeightedPool } from "../../generated/templates/WeightedPool/WeightedPool";
@@ -13,12 +15,21 @@ import { ERC20 } from "../../generated/WeightedPoolNoAMFactory/ERC20";
 import { ONE_BD, ZERO, ZERO_BD } from "./constants";
 import { getPoolAddress } from "./pool";
 
+const DAY = 24 * 60 * 60;
+
 export function scaleDown(num: BigInt, decimals: i32): BigDecimal {
   return num.divDecimal(
     BigInt.fromI32(10)
       .pow(u8(decimals))
       .toBigDecimal()
   );
+}
+
+export function getTokenDecimals(tokenAddress: Address): i32 {
+  let token = ERC20.bind(tokenAddress);
+  let result = token.try_decimals();
+
+  return result.reverted ? 0 : result.value;
 }
 
 export function stringToBytes(str: string): Bytes {
@@ -158,6 +169,65 @@ export function getPoolTokenId(poolId: string, tokenAddress: Address): string {
 
 export function loadPoolToken(poolId: string, tokenAddress: Address): PoolToken | null {
   return PoolToken.load(getPoolTokenId(poolId, tokenAddress));
+}
+
+export function createPoolSnapshot(pool: Pool, timestamp: i32): void {
+  let dayTimestamp = timestamp - (timestamp % DAY); // Todays Timestamp
+
+  let poolId = pool.id;
+  if (pool == null || !pool.tokensList) return;
+
+  let snapshotId = poolId + "-" + dayTimestamp.toString();
+  let snapshot = PoolSnapshot.load(snapshotId);
+
+  if (!snapshot) {
+    snapshot = new PoolSnapshot(snapshotId);
+  }
+
+  let tokens = pool.tokensList;
+  let amounts = new Array<BigDecimal>(tokens.length);
+  for (let i = 0; i < tokens.length; i++) {
+    let token = tokens[i];
+    let tokenAddress = Address.fromString(token.toHexString());
+    let poolToken = loadPoolToken(poolId, tokenAddress);
+    if (poolToken == null) continue;
+
+    amounts[i] = poolToken.balance;
+  }
+
+  snapshot.pool = poolId;
+  snapshot.amounts = amounts;
+  snapshot.totalShares = pool.totalShares;
+  snapshot.swapVolume = pool.totalSwapVolume;
+  snapshot.swapFees = pool.totalSwapFee;
+  snapshot.liquidity = pool.totalLiquidity;
+  snapshot.swapsCount = pool.swapsCount;
+  snapshot.holdersCount = pool.holdersCount;
+  snapshot.timestamp = dayTimestamp;
+  snapshot.save();
+}
+
+export function getTokenSnapshot(tokenAddress: Address, event: ethereum.Event): TokenSnapshot {
+  let timestamp = event.block.timestamp.toI32();
+  let dayID = timestamp / 86400;
+  let id = tokenAddress.toHexString() + "-" + dayID.toString();
+  let dayData = TokenSnapshot.load(id);
+
+  if (dayData == null) {
+    let dayStartTimestamp = dayID * 86400;
+    let token = getToken(tokenAddress);
+    dayData = new TokenSnapshot(id);
+    dayData.timestamp = dayStartTimestamp;
+    dayData.totalSwapCount = token.totalSwapCount;
+    dayData.totalBalanceUSD = token.totalBalanceUSD;
+    dayData.totalBalanceNotional = token.totalBalanceNotional;
+    dayData.totalVolumeUSD = token.totalVolumeUSD;
+    dayData.totalVolumeNotional = token.totalVolumeNotional;
+    dayData.token = token.id;
+    dayData.save();
+  }
+
+  return dayData;
 }
 
 export function createPoolTokenEntity(
