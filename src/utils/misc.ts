@@ -1,5 +1,5 @@
 import { BigDecimal, Address, BigInt, ethereum, Bytes } from "@graphprotocol/graph-ts";
-import { PoolShare, User } from "../../generated/schema";
+import { Balancer, BalancerSnapshot, Pool, PoolShare, User } from "../../generated/schema";
 import { ZERO_BD } from "./constants";
 import { getPoolAddress } from "./pool";
 
@@ -50,4 +50,44 @@ export function createUserEntity(address: Address): void {
     let user = new User(addressHex);
     user.save();
   }
+}
+
+export function createDefaultPoolEntity(poolId: string): Pool {
+  let pool = new Pool(poolId);
+  pool.vaultID = "2";
+  pool.strategyType = i32(parseInt(poolId.slice(42, 46)));
+  pool.tokensList = [];
+  pool.totalWeight = ZERO_BD;
+  pool.totalSwapVolume = ZERO_BD;
+  pool.totalSwapFee = ZERO_BD;
+  pool.totalLiquidity = ZERO_BD;
+  pool.totalShares = ZERO_BD;
+  pool.swapsCount = BigInt.fromI32(0);
+  pool.holdersCount = BigInt.fromI32(0);
+
+  return pool;
+}
+
+export function getBalancerSnapshot(vaultId: string, timestamp: i32): BalancerSnapshot {
+  let dayID = timestamp / 86400;
+  let id = vaultId + "-" + dayID.toString();
+  let snapshot = BalancerSnapshot.load(id);
+
+  if (snapshot == null) {
+    let dayStartTimestamp = dayID * 86400;
+    snapshot = new BalancerSnapshot(id);
+    // we know that the vault should be created by this call
+    let vault = Balancer.load("2") as Balancer;
+    snapshot.poolCount = vault.poolCount;
+
+    snapshot.totalLiquidity = vault.totalLiquidity;
+    snapshot.totalSwapFee = vault.totalSwapFee;
+    snapshot.totalSwapVolume = vault.totalSwapVolume;
+    snapshot.totalSwapCount = vault.totalSwapCount;
+    snapshot.vault = vaultId;
+    snapshot.timestamp = dayStartTimestamp;
+    snapshot.save();
+  }
+
+  return snapshot;
 }
