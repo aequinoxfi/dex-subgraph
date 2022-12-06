@@ -1,6 +1,6 @@
 specVersion: 0.0.5
 schema:
-  file: ./schema.graphql
+  file: schema.graphql
 dataSources:
   - kind: ethereum
     name: WeightedPoolNoAMFactory
@@ -17,11 +17,11 @@ dataSources:
         - PoolCreated
       abis:
         - name: WeightedPoolNoAMFactory
-          file: ./abis/WeightedPoolNoAMFactory.json
+          file: WeightedPoolNoAMFactory\abis\WeightedPoolNoAMFactory.json
       eventHandlers:
         - event: PoolCreated(indexed address)
           handler: handlePoolCreated
-      file: ./src/mappings/pool-factory.ts
+      file: WeightedPoolNoAMFactory\WeightedPoolNoAMFactory.wasm
 templates:
   - kind: ethereum/contract
     name: WeightedPool
@@ -32,7 +32,7 @@ templates:
       kind: ethereum/events
       apiVersion: 0.0.6
       language: wasm/assemblyscript
-      file: ./src/mappings/pool-controller.ts
+      file: templates\WeightedPool\WeightedPool.wasm
       entities:
         - Pool
         - PoolShare
@@ -40,9 +40,9 @@ templates:
         - PoolToken
       abis:
         - name: WeightedPool
-          file: ./abis/WeightedPool.json
+          file: WeightedPool\abis\WeightedPool.json
         - name: BalancerPoolToken
-          file: ./abis/BalancerPoolToken.json
+          file: WeightedPool\abis\BalancerPoolToken.json
       eventHandlers:
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer
