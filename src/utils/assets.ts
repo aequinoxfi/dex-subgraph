@@ -14,6 +14,7 @@ export const USDC_ADDRESS = Address.fromString("0x8AC76a51cc950d9822D68b83fE1Ad9
 export const DAI_ADDRESS = Address.fromString("0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3");
 export const USDT_ADDRESS = Address.fromString("0x55d398326f99059fF775485246999027B3197955");
 
+// Its assumed PRICING_ASSETS are sorted by order of preference
 export const assets: Assets = {
   stableAssets: [
     Address.fromString("0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56"), // BUSD
@@ -21,6 +22,7 @@ export const assets: Assets = {
     Address.fromString("0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3"), // DAI
     Address.fromString("0x55d398326f99059fF775485246999027B3197955") // USDT
   ],
+
   pricingAssets: [
     Address.fromString("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"), // WETH(WBNB)
     // Address.fromString("0x804CdB9116a10bB78768D3252355a1b18067bF8f"), // bb-a-DAI-V1

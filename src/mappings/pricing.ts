@@ -6,7 +6,13 @@ import {
   Balancer,
   TokenPrice
 } from "../../generated/schema";
-import { ONE_BD, PRICING_ASSETS, USD_STABLE_ASSETS, ZERO_BD } from "../utils/constants";
+import {
+  ONE_BD,
+  PRICING_ASSETS,
+  USD_STABLE_ASSETS,
+  ZERO_ADDRESS,
+  ZERO_BD
+} from "../utils/constants";
 import { createPoolSnapshot, getBalancerSnapshot, getToken, loadPoolToken } from "../utils/misc";
 import { hasVirtualSupply, PoolType } from "../utils/pool";
 
@@ -155,6 +161,14 @@ export function updateLatestPrice(tokenPrice: TokenPrice): void {
   token.latestUSDPrice = tokenInUSD;
   token.latestPrice = latestPrice.id;
   token.save();
+}
+
+export function getPreferentialPricingAsset(assets: Address[]): Address {
+  // Assumes PRICING_ASSETS are sorted by order of preference
+  for (let i: i32 = 0; i < PRICING_ASSETS.length; i++) {
+    if (assets.includes(PRICING_ASSETS[i])) return PRICING_ASSETS[i];
+  }
+  return ZERO_ADDRESS;
 }
 
 export function addHistoricalPoolLiquidityRecord(
