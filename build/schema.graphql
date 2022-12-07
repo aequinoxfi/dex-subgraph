@@ -14,6 +14,7 @@ type Pool @entity {
   id: ID!
   address: Bytes!
   poolType: String
+  poolTypeVersion: Int
   factory: Bytes
   strategyType: Int!
   oracleEnabled: Boolean!
@@ -66,6 +67,11 @@ type Pool @entity {
   wrappedIndex: Int
   lowerTarget: BigDecimal
   upperTarget: BigDecimal
+
+  # Composable and WeightedV2 Only
+  protocolSwapFeeCache: BigDecimal
+  protocolYieldFeeCache: BigDecimal
+  protocolAumFeeCache: BigDecimal
 }
 
 type PoolToken @entity {

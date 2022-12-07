@@ -4,15 +4,17 @@
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ oxbriz/deez-nuts",
-    "create-local": "graph create --node http://localhost:8020/ oxbriz/deez-nuts",
-    "remove-local": "graph remove --node http://localhost:8020/ oxbriz/deez-nuts",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 oxbriz/deez-nuts",
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ 0xbriz/deez-nuts",
+    "create-local": "graph create --node http://localhost:8020/ 0xbriz/deez-nuts",
+    "remove-local": "graph remove --node http://localhost:8020/ 0xbriz/deez-nuts",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 0xbriz/deez-nuts",
     "test": "graph test"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.37.0",
     "@graphprotocol/graph-ts": "0.28.1"
   },
-  "devDependencies": { "matchstick-as": "0.5.0" }
+  "devDependencies": {
+    "matchstick-as": "0.5.0"
+  }
 }

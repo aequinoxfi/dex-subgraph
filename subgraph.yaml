@@ -1,4 +1,4 @@
-specVersion: 0.0.5
+specVersion: 0.0.4
 schema:
   file: ./schema.graphql
 dataSources:
@@ -11,7 +11,7 @@ dataSources:
       startBlock: 20457276
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.7
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/vault.ts
       entities:
@@ -54,7 +54,7 @@ dataSources:
       startBlock: 20457276
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.7
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       entities:
         - PoolCreated
@@ -74,7 +74,7 @@ dataSources:
       startBlock: 12272146
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.7
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/pool-factory.ts
       entities:
@@ -101,7 +101,7 @@ dataSources:
       startBlock: 20457276
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.7
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/pool-factory.ts
       entities:
@@ -128,7 +128,7 @@ dataSources:
       startBlock: 21475485
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.7
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/pool-factory.ts
       entities:
@@ -181,7 +181,7 @@ templates:
       abi: StablePool
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.7
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/pool-controller.ts
       entities:
@@ -212,7 +212,7 @@ templates:
       abi: LinearPool
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.7
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/pool-controller.ts
       entities:

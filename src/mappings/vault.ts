@@ -64,7 +64,7 @@ import {
  ****** DEPOSITS & WITHDRAWALS ******
  ************************************/
 
-export function handleBalanceChange(event: PoolBalanceChanged) {
+export function handleBalanceChange(event: PoolBalanceChanged): void {
   let amounts: BigInt[] = event.params.deltas;
   if (amounts.length === 0) {
     return;
@@ -274,7 +274,7 @@ function handlePoolExited(event: PoolBalanceChanged): void {
  ********** INVESTMENTS/MANAGED *************
  ************************************/
 
-export function handleBalanceManage(event: PoolBalanceManaged) {
+export function handleBalanceManage(event: PoolBalanceManaged): void {
   let poolId = event.params.poolId;
   let pool = Pool.load(poolId.toHex());
   if (pool == null) {
@@ -324,7 +324,7 @@ export function handleBalanceManage(event: PoolBalanceManaged) {
  ******** INTERNAL BALANCES *********
  ************************************/
 
-export function handleInternalBalanceChange(event: InternalBalanceChanged) {
+export function handleInternalBalanceChange(event: InternalBalanceChanged): void {
   createUserEntity(event.params.user);
 
   let userAddress = event.params.user.toHexString();
@@ -350,7 +350,7 @@ export function handleInternalBalanceChange(event: InternalBalanceChanged) {
  ************** SWAPS ***************
  ************************************/
 
-export function handleSwapEvent(event: SwapEvent) {
+export function handleSwapEvent(event: SwapEvent): void {
   createUserEntity(event.transaction.from);
   let poolId = event.params.poolId;
 
@@ -627,21 +627,25 @@ function _createNewSwap(
   return swap;
 }
 
-function _updatePoolSwapCount(pool: Pool, swapValueUSD: BigDecimal, swapFeesUSD: BigDecimal) {
+function _updatePoolSwapCount(pool: Pool, swapValueUSD: BigDecimal, swapFeesUSD: BigDecimal): void {
   pool.swapsCount = pool.swapsCount.plus(BigInt.fromI32(1));
   pool.totalSwapVolume = pool.totalSwapVolume.plus(swapValueUSD);
   pool.totalSwapFee = pool.totalSwapFee.plus(swapFeesUSD);
   pool.save();
 }
 
-function _updateVaultSwapCount(vault: Balancer, swapValueUSD: BigDecimal, swapFeesUSD: BigDecimal) {
+function _updateVaultSwapCount(
+  vault: Balancer,
+  swapValueUSD: BigDecimal,
+  swapFeesUSD: BigDecimal
+): void {
   vault.totalSwapVolume = vault.totalSwapVolume.plus(swapValueUSD);
   vault.totalSwapFee = vault.totalSwapFee.plus(swapFeesUSD);
   vault.totalSwapCount = vault.totalSwapCount.plus(BigInt.fromI32(1));
   vault.save();
 }
 
-function _doVaultSnapshot(vault: Balancer, blockTimestamp: number) {
+function _doVaultSnapshot(vault: Balancer, blockTimestamp: i32): void {
   let vaultSnapshot = getBalancerSnapshot(vault.id, blockTimestamp);
   vaultSnapshot.totalSwapVolume = vault.totalSwapVolume;
   vaultSnapshot.totalSwapFee = vault.totalSwapFee;
@@ -654,8 +658,8 @@ function _updateTradePair(
   tokenOutAddress: Address,
   swapValueUSD: BigDecimal,
   swapFeesUSD: BigDecimal,
-  blockTimestamp: number
-) {
+  blockTimestamp: i32
+): void {
   let tradePair = getTradePair(tokenInAddress, tokenOutAddress);
   tradePair.totalSwapVolume = tradePair.totalSwapVolume.plus(swapValueUSD);
   tradePair.totalSwapFee = tradePair.totalSwapFee.plus(swapFeesUSD);
