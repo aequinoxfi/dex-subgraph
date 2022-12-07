@@ -1,0 +1,8 @@
+goerli:
+  network: goerli
+  Vault:
+    address: "0x84259CbD70aA17EB282Cb40666d2687Cd8E100AA"
+    startBlock: 8092248
+  WeightedPoolFactory:
+    address: "0xDE1b1D8a94b909976eC252d7b73BAA8F10B7d8e1"
+    startBlock: 8092248

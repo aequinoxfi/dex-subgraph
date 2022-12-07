@@ -8,11 +8,17 @@
     "create-local": "graph create --node http://localhost:8020/ 0xbriz/deez-nuts",
     "remove-local": "graph remove --node http://localhost:8020/ 0xbriz/deez-nuts",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 0xbriz/deez-nuts",
-    "test": "graph test"
+    "test": "graph test",
+    "generate-manifests": "ts-node ./scripts/generate-manifests"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.37.0",
-    "@graphprotocol/graph-ts": "0.28.1"
+    "@graphprotocol/graph-ts": "0.28.1",
+    "fs-extra": "^11.1.0",
+    "handlebars": "^4.7.7",
+    "js-yaml": "^4.1.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.3"
   },
   "devDependencies": {
     "matchstick-as": "0.5.0"
