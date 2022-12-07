@@ -33,3 +33,17 @@ export class StablePool extends DataSourceTemplate {
     );
   }
 }
+
+export class LinearPool extends DataSourceTemplate {
+  static create(address: Address): void {
+    DataSourceTemplate.create("LinearPool", [address.toHex()]);
+  }
+
+  static createWithContext(address: Address, context: DataSourceContext): void {
+    DataSourceTemplate.createWithContext(
+      "LinearPool",
+      [address.toHex()],
+      context
+    );
+  }
+}

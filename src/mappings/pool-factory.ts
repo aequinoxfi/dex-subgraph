@@ -4,19 +4,23 @@ import {
 } from "../../generated/WeightedPoolNoAMFactory/WeightedPoolNoAMFactory";
 import { ERC20 } from "../../generated/WeightedPoolNoAMFactory/ERC20";
 import { Balancer, Pool } from "../../generated/schema";
-import { Bytes, BigInt, Address } from "@graphprotocol/graph-ts";
+import { Bytes, BigInt, Address, BigDecimal } from "@graphprotocol/graph-ts";
 import {
   createDefaultPoolEntity,
   createPoolTokenEntity,
   getBalancerSnapshot,
   scaleDown,
-  stringToBytes
+  stringToBytes,
+  tokenToDecimal
 } from "../utils/misc";
 import { ZERO, ZERO_BD } from "../utils/constants";
 import { WeightedPool as WeightedPoolTemplate } from "../../generated/templates";
 import { StablePool as StablePoolTemplate } from "../../generated/templates";
+import { LinearPool as LinearPoolTemplate } from "../../generated/templates";
 import { getPoolTokenManager, getPoolTokens, PoolType } from "../utils/pool";
 import { updatePoolWeights } from "../utils/weighted";
+
+import { LinearPool } from "../../generated/ERC4626LinearPoolFactory/LinearPool";
 import { WeightedPool } from "../../generated/templates/WeightedPool/WeightedPool";
 import { StablePool } from "../../generated/StablePoolFactory/StablePool";
 
@@ -108,6 +112,48 @@ export function handleNewStablePool(event: PoolCreated): void {
   const pool = createStableLikePool(event, PoolType.Stable);
   if (pool == null) return;
   StablePoolTemplate.create(event.params.pool);
+}
+
+export function handleNewERC4626LinearPool(event: PoolCreated): void {
+  handleNewLinearPool(event, PoolType.ERC4626Linear);
+}
+
+function handleNewLinearPool(event: PoolCreated, poolType: string, poolTypeVersion: i32 = 1): void {
+  let poolAddress: Address = event.params.pool;
+
+  let poolContract = LinearPool.bind(poolAddress);
+
+  let poolIdCall = poolContract.try_getPoolId();
+  let poolId = poolIdCall.value;
+
+  let swapFeeCall = poolContract.try_getSwapFeePercentage();
+  let swapFee = swapFeeCall.value;
+
+  let pool = handleNewPool(event, poolId, swapFee);
+
+  pool.poolType = poolType;
+  pool.poolTypeVersion = poolTypeVersion;
+
+  let mainIndexCall = poolContract.try_getMainIndex();
+  pool.mainIndex = mainIndexCall.value.toI32();
+  let wrappedIndexCall = poolContract.try_getWrappedIndex();
+  pool.wrappedIndex = wrappedIndexCall.value.toI32();
+
+  let targetsCall = poolContract.try_getTargets();
+  pool.lowerTarget = tokenToDecimal(targetsCall.value.value0, 18);
+  pool.upperTarget = tokenToDecimal(targetsCall.value.value1, 18);
+
+  let tokens = getPoolTokens(poolId);
+  if (tokens == null) return;
+  pool.tokensList = tokens;
+
+  let maxTokenBalance = BigDecimal.fromString("5192296858534827.628530496329220095");
+  pool.totalShares = pool.totalShares.minus(maxTokenBalance);
+  pool.save();
+
+  handleNewPoolTokens(pool, tokens);
+
+  LinearPoolTemplate.create(poolAddress);
 }
 
 function findOrInitializeVault(): Balancer {

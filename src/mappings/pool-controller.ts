@@ -1,4 +1,5 @@
 import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import { TargetsSet } from "../../generated/ERC4626LinearPoolFactory/LinearPool";
 import { AmpUpdate, Pool, SwapFeeUpdate } from "../../generated/schema";
 import { AmpUpdateStarted, AmpUpdateStopped } from "../../generated/StablePoolFactory/StablePool";
 import {
@@ -173,4 +174,23 @@ export function handleAmpUpdateStopped(event: AmpUpdateStopped): void {
   let pool = Pool.load(poolId);
   if (pool == null) return;
   updateAmpFactor(pool);
+}
+
+/************************************
+ ************* TARGETS **************
+ ************************************/
+
+export function handleTargetsSet(event: TargetsSet): void {
+  let poolAddress = event.address;
+
+  // TODO - refactor so pool -> poolId doesn't require call
+  let poolContract = WeightedPool.bind(poolAddress);
+  let poolIdCall = poolContract.try_getPoolId();
+  let poolId = poolIdCall.value;
+
+  let pool = Pool.load(poolId.toHexString()) as Pool;
+
+  pool.lowerTarget = tokenToDecimal(event.params.lowerTarget, 18);
+  pool.upperTarget = tokenToDecimal(event.params.upperTarget, 18);
+  pool.save();
 }
