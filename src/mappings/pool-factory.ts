@@ -152,16 +152,20 @@ function handleNewPool(event: PoolCreated, poolId: Bytes, swapFee: BigInt) {
 
     pool.save();
 
-    let vault = findOrInitializeVault();
-    vault.poolCount += 1;
-    vault.save();
-
-    let vaultSnapshot = getBalancerSnapshot(vault.id, event.block.timestamp.toI32());
-    vaultSnapshot.poolCount += 1;
-    vaultSnapshot.save();
+    _updateVault(event.block.timestamp.toI32());
   }
 
   return pool;
+}
+
+function _updateVault(blockTimestamp: i32) {
+  let vault = findOrInitializeVault();
+  vault.poolCount += 1;
+  vault.save();
+
+  let vaultSnapshot = getBalancerSnapshot(vault.id, blockTimestamp);
+  vaultSnapshot.poolCount += 1;
+  vaultSnapshot.save();
 }
 
 function handleNewPoolTokens(pool: Pool, tokens: Bytes[]): void {
