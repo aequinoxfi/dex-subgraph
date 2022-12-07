@@ -32,6 +32,35 @@ export function hasVirtualSupply(pool: Pool): boolean {
   );
 }
 
+export function isVariableWeightPool(pool: Pool): boolean {
+  return pool.poolType == PoolType.LiquidityBootstrapping || pool.poolType == PoolType.Investment;
+}
+
+export function isComposablePool(pool: Pool): boolean {
+  return pool.poolType == PoolType.ComposableStable;
+}
+
+export function isLinearPool(pool: Pool): boolean {
+  return (
+    pool.poolType == PoolType.AaveLinear ||
+    pool.poolType == PoolType.ERC4626Linear ||
+    pool.poolType == PoolType.Linear
+  );
+}
+
+export function isStableLikePool(pool: Pool): boolean {
+  return (
+    pool.poolType == PoolType.Stable ||
+    pool.poolType == PoolType.MetaStable ||
+    pool.poolType == PoolType.StablePhantom ||
+    pool.poolType == PoolType.ComposableStable
+  );
+}
+
+export function isFXPool(pool: Pool): boolean {
+  return pool.poolType == PoolType.FX;
+}
+
 export function getPoolAddress(poolId: string): Address {
   return changetype<Address>(Address.fromHexString(poolId.slice(0, 42)));
 }

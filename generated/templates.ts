@@ -19,3 +19,17 @@ export class WeightedPool extends DataSourceTemplate {
     );
   }
 }
+
+export class StablePool extends DataSourceTemplate {
+  static create(address: Address): void {
+    DataSourceTemplate.create("StablePool", [address.toHex()]);
+  }
+
+  static createWithContext(address: Address, context: DataSourceContext): void {
+    DataSourceTemplate.createWithContext(
+      "StablePool",
+      [address.toHex()],
+      context
+    );
+  }
+}

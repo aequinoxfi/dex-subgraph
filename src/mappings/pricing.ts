@@ -1,5 +1,11 @@
 import { BigDecimal, Address, Bytes, BigInt } from "@graphprotocol/graph-ts";
-import { Pool, LatestPrice, PoolHistoricalLiquidity, Balancer } from "../../generated/schema";
+import {
+  Pool,
+  LatestPrice,
+  PoolHistoricalLiquidity,
+  Balancer,
+  TokenPrice
+} from "../../generated/schema";
 import { ONE_BD, PRICING_ASSETS, USD_STABLE_ASSETS, ZERO_BD } from "../utils/constants";
 import { createPoolSnapshot, getBalancerSnapshot, getToken, loadPoolToken } from "../utils/misc";
 import { hasVirtualSupply, PoolType } from "../utils/pool";
@@ -89,6 +95,66 @@ export function updateBptPrice(pool: Pool): void {
   let bptToken = getToken(bptAddress);
   bptToken.latestUSDPrice = pool.totalLiquidity.div(pool.totalShares);
   bptToken.save();
+}
+
+export function swapValueInUSD(
+  tokenInAddress: Address,
+  tokenAmountIn: BigDecimal,
+  tokenOutAddress: Address,
+  tokenAmountOut: BigDecimal
+): BigDecimal {
+  let swapValueUSD = ZERO_BD;
+
+  if (isUSDStable(tokenOutAddress)) {
+    // if one of the tokens is a stable, it takes precedence
+    swapValueUSD = valueInUSD(tokenAmountOut, tokenOutAddress);
+  } else if (isUSDStable(tokenInAddress)) {
+    // if one of the tokens is a stable, it takes precedence
+    swapValueUSD = valueInUSD(tokenAmountIn, tokenInAddress);
+  } else if (isPricingAsset(tokenInAddress) && !isPricingAsset(tokenOutAddress)) {
+    // if only one of the tokens is a pricing asset, it takes precedence
+    swapValueUSD = valueInUSD(tokenAmountIn, tokenInAddress);
+  } else if (isPricingAsset(tokenOutAddress) && !isPricingAsset(tokenInAddress)) {
+    // if only one of the tokens is a pricing asset, it takes precedence
+    swapValueUSD = valueInUSD(tokenAmountOut, tokenOutAddress);
+  } else {
+    // if none or both tokens are pricing assets, take the average of the known prices
+    let tokenInSwapValueUSD = valueInUSD(tokenAmountIn, tokenInAddress);
+    let tokenOutSwapValueUSD = valueInUSD(tokenAmountOut, tokenOutAddress);
+    let divisor =
+      tokenInSwapValueUSD.gt(ZERO_BD) && tokenOutSwapValueUSD.gt(ZERO_BD)
+        ? BigDecimal.fromString("2")
+        : ONE_BD;
+    swapValueUSD = tokenInSwapValueUSD.plus(tokenOutSwapValueUSD).div(divisor);
+  }
+
+  return swapValueUSD;
+}
+
+export function updateLatestPrice(tokenPrice: TokenPrice): void {
+  let tokenAddress = Address.fromString(tokenPrice.asset.toHexString());
+  let pricingAsset = Address.fromString(tokenPrice.pricingAsset.toHexString());
+
+  let latestPriceId = getLatestPriceId(tokenAddress, pricingAsset);
+  let latestPrice = LatestPrice.load(latestPriceId);
+
+  if (latestPrice == null) {
+    latestPrice = new LatestPrice(latestPriceId);
+    latestPrice.asset = tokenPrice.asset;
+    latestPrice.pricingAsset = tokenPrice.pricingAsset;
+  }
+
+  latestPrice.block = tokenPrice.block;
+  latestPrice.poolId = tokenPrice.poolId;
+  latestPrice.price = tokenPrice.price;
+  latestPrice.save();
+
+  let token = getToken(tokenAddress);
+  const pricingAssetAddress = Address.fromString(tokenPrice.pricingAsset.toHexString());
+  const tokenInUSD = valueInUSD(tokenPrice.price, pricingAssetAddress);
+  token.latestUSDPrice = tokenInUSD;
+  token.latestPrice = latestPrice.id;
+  token.save();
 }
 
 export function addHistoricalPoolLiquidityRecord(

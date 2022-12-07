@@ -14,9 +14,11 @@ import {
 } from "../utils/misc";
 import { ZERO, ZERO_BD } from "../utils/constants";
 import { WeightedPool as WeightedPoolTemplate } from "../../generated/templates";
+import { StablePool as StablePoolTemplate } from "../../generated/templates";
 import { getPoolTokenManager, getPoolTokens, PoolType } from "../utils/pool";
 import { updatePoolWeights } from "../utils/weighted";
 import { WeightedPool } from "../../generated/templates/WeightedPool/WeightedPool";
+import { StablePool } from "../../generated/StablePoolFactory/StablePool";
 
 function createWeightedLikePool(
   event: PoolCreated,
@@ -57,6 +59,39 @@ function createWeightedLikePool(
   return poolId.toHexString();
 }
 
+function createStableLikePool(
+  event: PoolCreated,
+  poolType: string,
+  poolTypeVersion: i32 = 1
+): string | null {
+  let poolAddress: Address = event.params.pool;
+  let poolContract = StablePool.bind(poolAddress);
+
+  let poolIdCall = poolContract.try_getPoolId();
+  let poolId = poolIdCall.value;
+
+  let swapFeeCall = poolContract.try_getSwapFeePercentage();
+  let swapFee = swapFeeCall.value;
+
+  let ownerCall = poolContract.try_getOwner();
+  let owner = ownerCall.value;
+
+  let pool = handleNewPool(event, poolId, swapFee);
+  pool.poolType = poolType;
+  pool.poolTypeVersion = poolTypeVersion;
+  pool.owner = owner;
+
+  let tokens = getPoolTokens(poolId);
+  if (tokens == null) return null;
+  pool.tokensList = tokens;
+
+  pool.save();
+
+  handleNewPoolTokens(pool, tokens);
+
+  return poolId.toHexString();
+}
+
 export function handlePoolCreated(event: PoolCreatedEvent): void {
   let pool = new Pool(event.params.pool.toHexString());
 
@@ -67,6 +102,12 @@ export function handleNewWeightedPool(event: PoolCreated): void {
   const pool = createWeightedLikePool(event, PoolType.Weighted);
   if (pool == null) return;
   WeightedPoolTemplate.create(event.params.pool);
+}
+
+export function handleNewStablePool(event: PoolCreated): void {
+  const pool = createStableLikePool(event, PoolType.Stable);
+  if (pool == null) return;
+  StablePoolTemplate.create(event.params.pool);
 }
 
 function findOrInitializeVault(): Balancer {

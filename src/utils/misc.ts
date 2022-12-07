@@ -8,12 +8,16 @@ import {
   PoolToken,
   Token,
   TokenSnapshot,
+  TradePair,
+  TradePairSnapshot,
   User
 } from "../../generated/schema";
 import { WeightedPool } from "../../generated/templates/WeightedPool/WeightedPool";
 import { ERC20 } from "../../generated/WeightedPoolNoAMFactory/ERC20";
-import { ONE_BD, ZERO, ZERO_BD } from "./constants";
+import { ONE_BD, SWAP_IN, SWAP_OUT, ZERO, ZERO_BD } from "./constants";
 import { getPoolAddress } from "./pool";
+import { Swap as SwapEvent } from "../../generated/Vault/Vault";
+import { valueInUSD } from "../mappings/pricing";
 
 const DAY = 24 * 60 * 60;
 
@@ -41,6 +45,100 @@ export function tokenToDecimal(amount: BigInt, decimals: i32): BigDecimal {
     .pow(decimals as u8)
     .toBigDecimal();
   return amount.toBigDecimal().div(scale);
+}
+
+export function uptickSwapsForToken(tokenAddress: Address, event: ethereum.Event): void {
+  let token = getToken(tokenAddress);
+  // update the overall swap count for the token
+  token.totalSwapCount = token.totalSwapCount.plus(BigInt.fromI32(1));
+  token.save();
+
+  // update the snapshots
+  let snapshot = getTokenSnapshot(tokenAddress, event);
+  snapshot.totalSwapCount = token.totalSwapCount;
+  snapshot.save();
+}
+
+export function getTokenPriceId(
+  poolId: string,
+  tokenAddress: Address,
+  stableTokenAddress: Address,
+  block: BigInt
+): string {
+  return poolId
+    .concat("-")
+    .concat(tokenAddress.toHexString())
+    .concat("-")
+    .concat(stableTokenAddress.toHexString())
+    .concat("-")
+    .concat(block.toString());
+}
+
+export function updateTokenBalances(
+  tokenAddress: Address,
+  usdBalance: BigDecimal,
+  notionalBalance: BigDecimal,
+  swapDirection: i32,
+  event: SwapEvent
+): void {
+  let token = getToken(tokenAddress);
+
+  if (swapDirection == SWAP_IN) {
+    const totalBalanceNotional = token.totalBalanceNotional.plus(notionalBalance);
+    token.totalBalanceNotional = totalBalanceNotional;
+    token.totalBalanceUSD = valueInUSD(totalBalanceNotional, tokenAddress);
+  } else if (swapDirection == SWAP_OUT) {
+    const totalBalanceNotional = token.totalBalanceNotional.minus(notionalBalance);
+    token.totalBalanceNotional = totalBalanceNotional;
+    token.totalBalanceUSD = valueInUSD(totalBalanceNotional, tokenAddress);
+  }
+
+  token.totalVolumeUSD = token.totalVolumeUSD.plus(usdBalance);
+  token.save();
+
+  let tokenSnapshot = getTokenSnapshot(tokenAddress, event);
+  tokenSnapshot.totalBalanceNotional = token.totalBalanceNotional;
+  tokenSnapshot.totalBalanceUSD = token.totalBalanceUSD;
+  tokenSnapshot.totalVolumeNotional = token.totalVolumeNotional;
+  tokenSnapshot.totalVolumeUSD = token.totalVolumeUSD;
+  tokenSnapshot.save();
+}
+
+export function getTradePair(token0Address: Address, token1Address: Address): TradePair {
+  let sortedAddresses = new Array<string>(2);
+  sortedAddresses[0] = token0Address.toHexString();
+  sortedAddresses[1] = token1Address.toHexString();
+  sortedAddresses.sort();
+
+  let tradePairId = sortedAddresses[0] + "-" + sortedAddresses[1];
+  let tradePair = TradePair.load(tradePairId);
+  if (tradePair == null) {
+    tradePair = new TradePair(tradePairId);
+    tradePair.token0 = sortedAddresses[0];
+    tradePair.token1 = sortedAddresses[1];
+    tradePair.totalSwapFee = ZERO_BD;
+    tradePair.totalSwapVolume = ZERO_BD;
+    tradePair.save();
+  }
+  return tradePair;
+}
+
+export function getTradePairSnapshot(tradePairId: string, timestamp: i32): TradePairSnapshot {
+  let dayID = timestamp / 86400;
+  let id = tradePairId + "-" + dayID.toString();
+  let snapshot = TradePairSnapshot.load(id);
+  if (snapshot == null) {
+    let dayStartTimestamp = dayID * 86400;
+    let tradePair = TradePair.load(tradePairId);
+
+    snapshot = new TradePairSnapshot(id);
+    snapshot.pair = tradePairId;
+    snapshot.timestamp = dayStartTimestamp;
+    snapshot.totalSwapVolume = tradePair != null ? tradePair.totalSwapVolume : ZERO_BD;
+    snapshot.totalSwapFee = tradePair != null ? tradePair.totalSwapFee : ZERO_BD;
+    snapshot.save();
+  }
+  return snapshot;
 }
 
 export function getPoolShareId(poolControllerAddress: Address, lpAddress: Address): string {

@@ -1,5 +1,6 @@
 import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
-import { Pool, SwapFeeUpdate } from "../../generated/schema";
+import { AmpUpdate, Pool, SwapFeeUpdate } from "../../generated/schema";
+import { AmpUpdateStarted, AmpUpdateStopped } from "../../generated/StablePoolFactory/StablePool";
 import {
   SwapFeePercentageChanged,
   Transfer as TransferEvent,
@@ -7,6 +8,7 @@ import {
 } from "../../generated/templates/WeightedPool/WeightedPool";
 import { ZERO_ADDRESS, ZERO_BD } from "../utils/constants";
 import { createUserEntity, getPoolShare, scaleDown, tokenToDecimal } from "../utils/misc";
+import { updateAmpFactor } from "../utils/stable";
 
 /************************************
  *********** POOL SHARES ************
@@ -125,4 +127,50 @@ export function createSwapFeeUpdate(
   swapFeeUpdate.startSwapFeePercentage = _startSwapFeePercentage;
   swapFeeUpdate.endSwapFeePercentage = _endSwapFeePercentage;
   swapFeeUpdate.save();
+}
+
+/************************************
+ *********** AMP UPDATES ************
+ ************************************/
+
+export function handleAmpUpdateStarted(event: AmpUpdateStarted): void {
+  let poolAddress = event.address;
+
+  // TODO - refactor so pool -> poolId doesn't require call
+  let poolContract = WeightedPool.bind(poolAddress);
+  let poolIdCall = poolContract.try_getPoolId();
+  let poolId = poolIdCall.value;
+
+  let id = event.transaction.hash.toHexString().concat(event.transactionLogIndex.toString());
+  let ampUpdate = new AmpUpdate(id);
+  ampUpdate.poolId = poolId.toHexString();
+  ampUpdate.scheduledTimestamp = event.block.timestamp.toI32();
+  ampUpdate.startTimestamp = event.params.startTime;
+  ampUpdate.endTimestamp = event.params.endTime;
+  ampUpdate.startAmp = event.params.startValue;
+  ampUpdate.endAmp = event.params.endValue;
+  ampUpdate.save();
+}
+
+export function handleAmpUpdateStopped(event: AmpUpdateStopped): void {
+  let poolAddress = event.address;
+
+  // TODO - refactor so pool -> poolId doesn't require call
+  let poolContract = WeightedPool.bind(poolAddress);
+  let poolIdCall = poolContract.try_getPoolId();
+  let poolId = poolIdCall.value.toHexString();
+
+  let id = event.transaction.hash.toHexString().concat(event.transactionLogIndex.toString());
+  let ampUpdate = new AmpUpdate(id);
+  ampUpdate.poolId = poolId;
+  ampUpdate.scheduledTimestamp = event.block.timestamp.toI32();
+  ampUpdate.startTimestamp = event.block.timestamp;
+  ampUpdate.endTimestamp = event.block.timestamp;
+  ampUpdate.startAmp = event.params.currentValue;
+  ampUpdate.endAmp = event.params.currentValue;
+  ampUpdate.save();
+
+  let pool = Pool.load(poolId);
+  if (pool == null) return;
+  updateAmpFactor(pool);
 }
