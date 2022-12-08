@@ -1,14 +1,16 @@
 specVersion: 0.0.4
+description: Balancer is a non-custodial portfolio manager, liquidity provider, and price sensor.
+repository: https://github.com/aequinoxfi/dex-subgraph
 schema:
   file: schema.graphql
 dataSources:
   - kind: ethereum/contract
     name: Vault
-    network: bsc
+    network: goerli
     source:
-      address: "0xEE1c8DbfBf958484c6a4571F5FB7b99B74A54AA7"
+      address: "0x84259CbD70aA17EB282Cb40666d2687Cd8E100AA"
       abi: Vault
-      startBlock: 20457276
+      startBlock: 8098396
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -46,37 +48,17 @@ dataSources:
         - event: InternalBalanceChanged(indexed address,indexed address,int256)
           handler: handleInternalBalanceChange
   - kind: ethereum/contract
-    name: WeightedPoolNoAMFactory
-    network: bsc
-    source:
-      address: "0x7aFB1Fff22D2EAbC5d256187472bF1989CDE2f97"
-      abi: WeightedPoolNoAMFactory
-      startBlock: 20457276
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.6
-      language: wasm/assemblyscript
-      entities:
-        - PoolCreated
-      abis:
-        - name: WeightedPoolNoAMFactory
-          file: WeightedPoolNoAMFactory\abis\WeightedPoolNoAMFactory.json
-      eventHandlers:
-        - event: PoolCreated(indexed address)
-          handler: handlePoolCreated
-      file: WeightedPoolNoAMFactory\WeightedPoolNoAMFactory.wasm
-  - kind: ethereum/contract
     name: WeightedPoolFactory
-    network: bsc
+    network: goerli
     source:
-      address: "0x8E9aa87E45e92bad84D5F8DD1bff34Fb92637dE9"
+      address: "0xDE1b1D8a94b909976eC252d7b73BAA8F10B7d8e1"
       abi: WeightedPoolFactory
-      startBlock: 12272146
+      startBlock: 8098396
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
       language: wasm/assemblyscript
-      file: WeightedPoolNoAMFactory\WeightedPoolNoAMFactory.wasm
+      file: WeightedPoolFactory\WeightedPoolFactory.wasm
       entities:
         - Balancer
         - Pool
@@ -92,66 +74,10 @@ dataSources:
       eventHandlers:
         - event: PoolCreated(indexed address)
           handler: handleNewWeightedPool
-  - kind: ethereum/contract
-    name: StablePoolFactory
-    network: bsc
-    source:
-      address: "0xe2983b13b8f6631523a6177Cc7D926f49cEf3490"
-      abi: StablePoolFactory
-      startBlock: 20457276
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.6
-      language: wasm/assemblyscript
-      file: WeightedPoolNoAMFactory\WeightedPoolNoAMFactory.wasm
-      entities:
-        - Balancer
-        - Pool
-      abis:
-        - name: Vault
-          file: StablePoolFactory\abis\Vault.json
-        - name: ERC20
-          file: StablePoolFactory\abis\ERC20.json
-        - name: StablePoolFactory
-          file: StablePoolFactory\abis\StablePoolFactory.json
-        - name: StablePool
-          file: StablePoolFactory\abis\StablePool.json
-      eventHandlers:
-        - event: PoolCreated(indexed address)
-          handler: handleNewStablePool
-  - kind: ethereum/contract
-    name: ERC4626LinearPoolFactory
-    network: bsc
-    source:
-      address: "0x202fE8BA86cA85872577fab79Ba78aD192E79C02"
-      abi: ERC4626LinearPoolFactory
-      startBlock: 21475485
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.6
-      language: wasm/assemblyscript
-      file: WeightedPoolNoAMFactory\WeightedPoolNoAMFactory.wasm
-      entities:
-        - Balancer
-        - Pool
-      abis:
-        - name: Vault
-          file: ERC4626LinearPoolFactory\abis\Vault.json
-        - name: ERC20
-          file: ERC4626LinearPoolFactory\abis\ERC20.json
-        - name: ERC4626LinearPoolFactory
-          file: ERC4626LinearPoolFactory\abis\ERC4626LinearPoolFactory.json
-        - name: LinearPool
-          file: ERC4626LinearPoolFactory\abis\LinearPool.json
-        - name: ERC4626LinearPool
-          file: ERC4626LinearPoolFactory\abis\ERC4626LinearPool.json
-      eventHandlers:
-        - event: PoolCreated(indexed address)
-          handler: handleNewERC4626LinearPool
 templates:
   - kind: ethereum/contract
     name: WeightedPool
-    network: bsc
+    network: goerli
     source:
       abi: WeightedPool
     mapping:
@@ -176,7 +102,7 @@ templates:
           handler: handleSwapFeePercentageChange
   - kind: ethereum/contract
     name: StablePool
-    network: bsc
+    network: goerli
     source:
       abi: StablePool
     mapping:
@@ -207,7 +133,7 @@ templates:
           handler: handleAmpUpdateStopped
   - kind: ethereum/contract
     name: LinearPool
-    network: bsc
+    network: goerli
     source:
       abi: LinearPool
     mapping:

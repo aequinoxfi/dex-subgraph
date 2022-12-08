@@ -1,4 +1,4 @@
-specVersion: 0.0.2
+specVersion: 0.0.4
 description: Balancer is a non-custodial portfolio manager, liquidity provider, and price sensor.
 repository: https://github.com/aequinoxfi/dex-subgraph
 schema:
@@ -13,7 +13,7 @@ dataSources:
       startBlock: 8098396
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/vault.ts
       entities:
@@ -56,7 +56,7 @@ dataSources:
       startBlock: 8098396
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/poolFactory.ts
       entities:
@@ -83,7 +83,7 @@ templates:
       abi: WeightedPool
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/poolController.ts
       entities:
@@ -108,7 +108,7 @@ templates:
       abi: StablePool
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/poolController.ts
       entities:
@@ -139,7 +139,7 @@ templates:
       abi: LinearPool
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/poolController.ts
       entities:
