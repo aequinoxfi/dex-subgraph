@@ -11,6 +11,7 @@
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 0xbriz/deez-nuts",
     "deploy:goerli": "graph deploy aequinoxfi/vertek-subgraph-goerli subgraph.goerli.yaml --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/",
     "test": "graph test",
+    "generate-assets": "ts-node ./scripts/generate-assets",
     "generate-manifests": "ts-node ./scripts/generate-manifests"
   },
   "dependencies": {
